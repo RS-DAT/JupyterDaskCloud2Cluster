@@ -1,0 +1,13 @@
+name: default
+channels:
+ - conda-forge
+dependencies:
+ - bokeh=3.2.2  # https://github.com/dask/dask-labextension/issues/270
+ - click
+ - dask-jobqueue
+ - dask-labextension
+ - dask[complete]
+ - fabric
+ - jupyterlab-git
+ - jupyterlab>=3
+ - openssh  # need SSH to connect to remote resources

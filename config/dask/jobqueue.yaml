@@ -1,0 +1,26 @@
+# NOTE: the variables commented below are passed via environment
+# variables, since they need to be set dynamically
+jobqueue:
+  slurm:
+    name: dask-worker
+    cores: 1                    # Total number of cores per job
+    memory: '8GiB'             # Total amount of memory per job
+    queue: 'normal'
+    processes: 1                # Number of Python processes per job
+    death-timeout: 600          # Number of seconds to wait if a worker can not find a scheduler
+    local-directory: '$TMPDIR'  # Location of fast local storage like /scratch or $TMPDIR
+    walltime: '1:00:00'
+    scheduler-options:
+      port: 8786
+      host: 'localhost'
+#      contact_address: 'tcp://${SLURM_LOGIN_NODE}:8787'
+#      preload: ${DASK_CONFIG}/scheduler-setup.py
+    job_script_prologue:
+      - 'APPTAINER_TMPDIR=${TMPDIR}'
+      - 'WORKER_PORT=`shuf -i 8400-9400 -n 1`'
+    worker_extra_args:
+      - '--listen-address'
+      - 'tcp://0.0.0.0:${WORKER_PORT}'
+      - '--contact-address'
+      - 'tcp://localhost:${WORKER_PORT}'
+#    python: 'apptainer exec ${APPTAINER_IMAGE} python'

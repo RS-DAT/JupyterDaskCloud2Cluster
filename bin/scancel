@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+ssh -q -t ${SLURM_USER}@${SLURM_HOST} "scancel $@"

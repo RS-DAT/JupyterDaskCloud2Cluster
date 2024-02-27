@@ -1,0 +1,11 @@
+#!/bin/bash 
+
+content=`cat $@`
+
+ssh -q -t ${SLURM_USER}@${SLURM_HOST} "
+TMPFILE=`mktemp`
+cat << 'EOF' > \$TMPFILE
+${content}
+EOF
+sbatch \$TMPFILE
+"

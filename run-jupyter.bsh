@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Load variables with input settings
+source var 
+
+# Start SSH agent and add key to connect to SLURM system
+eval `ssh-agent -s`
+ssh-add ${SLURM_SSH_PRIVATE_KEY}
+
+# Remote forwarding of the port used by the scheduler. This is so that workers can connect to the 
+# scheduler. By default remote hosts other than localhost are not allowed to the forwarded port. 
+# Either set "GatewayPorts yes" in /etc/ssh/sshd_config or run the command on remote to bind to 
+# all interfaces (however, **it needs to use a different port**) - see https://iximiuz.com/en/posts/ssh-tunnels/
+ssh -A -tt -f -M \
+  -S /tmp/.ssh-slurm \
+  -R 0.0.0.0:${LOCAL_DASK_SCHEDULER_PORT}:localhost:${LOCAL_DASK_SCHEDULER_PORT} \
+  ${SLURM_USER}@${SLURM_HOST} \
+  "ssh -g -N -L ${SLURM_DASK_SCHEDULER_PORT}:localhost:${LOCAL_DASK_SCHEDULER_PORT} localhost"
+
+# Export the socket location to the container (also, need to bind /tmp)
+# this will be needed to submit jobs to the SLURM system and to local forward worker's ports
+export SSH_AUTH_SOCK
+# Export username and host for SLURM system
+export SLURM_USER
+export SLURM_HOST
+# Dask settings
+export DASK_CONFIG="${PWD}/config/dask"
+export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__CONTACT_ADDRESS="tcp://${SLURM_LOGIN_NODE}:${SLURM_DASK_SCHEDULER_PORT}"
+export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__PRELOAD="${DASK_CONFIG}/scheduler-setup.py"
+export DASK_JOBQUEUE__SLURM__PYTHON="apptainer exec ${APPTAINER_IMAGE} python"
+# Enable aliases for SLURM commands
+export APPTAINERENV_PREPEND_PATH="${PWD}/bin"
+# FSSPEC settings for dcache
+export FSSPEC_DCACHE_API_URL="https://dcacheview.grid.surfsara.nl:22880/api/v1"
+export FSSPEC_DCACHE_WEBDAV_URL="https://webdav.grid.surfsara.nl:2880"
+export FSSPEC_DCACHE_TOKEN=${DCACHE_TOKEN}
+
+# Bind /tmp to access SSH agent socket 
+apptainer -d exec -B /tmp:/tmp ${APPTAINER_IMAGE} jupyter lab --no-browser --port=8888 --ip=0.0.0.0
+
+# kill the SSH agent
+kill ${SSH_AGENT_PID}
+
+# Close remote forwarding, also killing remote SSH commmand
+ssh -S /tmp/.ssh-slurm -O exit ${SLURM_USER}@${SLURM_HOST}
