@@ -1,4 +1,4 @@
-APPTAINER_IMAGE="oras://ghcr.io/fnattino/test-jupyterdask-image-apptainer:latest"
+APPTAINER_IMAGE="oras://ghcr.io/rs-dat/jupyterdaskcloud2cluster:latest"
 LOCAL_DASK_SCHEDULER_PORT="8786"
 SLURM_DASK_SCHEDULER_PORT="8787"  # should differ from the local one, both should be available on SLURM login node
 SLURM_USERNAME="login-name"
