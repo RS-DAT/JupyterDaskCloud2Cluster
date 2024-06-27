@@ -5,17 +5,10 @@ source var
 
 # Start SSH agent and add key to connect to SLURM system
 eval `ssh-agent -s`
-ssh-add ${SLURM_SSH_PRIVATE_KEY}
+ssh-add ${SLURM_SSH_KEY}
 
-# Remote forwarding of the port used by the scheduler. This is so that workers can connect to the 
-# scheduler. By default remote hosts other than localhost are not allowed to the forwarded port. 
-# Either set "GatewayPorts yes" in /etc/ssh/sshd_config or run the command on remote to bind to 
-# all interfaces (however, **it needs to use a different port**) - see https://iximiuz.com/en/posts/ssh-tunnels/
-ssh -A -tt -f -M \
-  -S /tmp/.ssh-slurm \
-  -R 0.0.0.0:${LOCAL_DASK_SCHEDULER_PORT}:localhost:${LOCAL_DASK_SCHEDULER_PORT} \
-  ${SLURM_USER}@${SLURM_HOST} \
-  "ssh -g -N -L ${SLURM_DASK_SCHEDULER_PORT}:localhost:${LOCAL_DASK_SCHEDULER_PORT} localhost"
+# Define address where to contact the scheduler
+HOST_PUBLIC=`curl ifconfig.me`
 
 # Export the socket location to the container (also, need to bind /tmp)
 # this will be needed to submit jobs to the SLURM system and to local forward worker's ports
@@ -25,7 +18,8 @@ export SLURM_USER
 export SLURM_HOST
 # Dask settings
 export DASK_CONFIG="${PWD}/config/dask"
-export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__CONTACT_ADDRESS="tcp://${SLURM_LOGIN_NODE}:${SLURM_DASK_SCHEDULER_PORT}"
+export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__PORT="8786"  # port should be open for the workers to reach the scheduler
+export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__CONTACT_ADDRESS="tcp://${HOST_PUBLIC}:${DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__PORT}"
 export DASK_JOBQUEUE__SLURM__SCHEDULER_OPTIONS__PRELOAD="${DASK_CONFIG}/scheduler-setup.py"
 export DASK_JOBQUEUE__SLURM__PYTHON="apptainer exec ${APPTAINER_IMAGE} python"
 # Enable aliases for SLURM commands
@@ -41,5 +35,3 @@ apptainer -d exec -B /tmp:/tmp ${APPTAINER_IMAGE} jupyter lab --no-browser --por
 # kill the SSH agent
 kill ${SSH_AGENT_PID}
 
-# Close remote forwarding, also killing remote SSH commmand
-ssh -S /tmp/.ssh-slurm -O exit ${SLURM_USER}@${SLURM_HOST}

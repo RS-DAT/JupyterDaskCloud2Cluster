@@ -11,16 +11,9 @@ jobqueue:
     local-directory: '$TMPDIR'  # Location of fast local storage like /scratch or $TMPDIR
     walltime: '1:00:00'
     scheduler-options:
-      port: 8786
-      host: 'localhost'
-#      contact_address: 'tcp://${SLURM_LOGIN_NODE}:8787'
-#      preload: ${DASK_CONFIG}/scheduler-setup.py
+      host: '0.0.0.0'
     job_script_prologue:
-      - 'APPTAINER_TMPDIR=${TMPDIR}'
-      - 'WORKER_PORT=`shuf -i 8400-9400 -n 1`'
+      - 'WORKER_PORT=`shuf -i 8900-9900 -n 1`'
     worker_extra_args:
-      - '--listen-address'
-      - 'tcp://0.0.0.0:${WORKER_PORT}'
-      - '--contact-address'
-      - 'tcp://localhost:${WORKER_PORT}'
-#    python: 'apptainer exec ${APPTAINER_IMAGE} python'
+      - '--worker-port'
+      - '${WORKER_PORT}'

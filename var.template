@@ -1,8 +1,5 @@
 APPTAINER_IMAGE="oras://ghcr.io/rs-dat/jupyterdaskcloud2cluster:latest"
-LOCAL_DASK_SCHEDULER_PORT="8786"
-SLURM_DASK_SCHEDULER_PORT="8787"  # should differ from the local one, both should be available on SLURM login node
-SLURM_USERNAME="login-name"
-SLURM_SSH_PRIVATE_KEY="/path/to/the/ssh/key"
-SLURM_LOGIN_NODE="ui-01"
-SLURM_HOST="${SLURM_LOGIN_NODE}.spider.surfsara.nl"
+SLURM_USER="login-name"
+SLURM_SSH_KEY="/path/to/the/ssh/key"
+SLURM_HOST="hostname.surf.nl"
 DCACHE_TOKEN="paste-the-macaroon-here"
